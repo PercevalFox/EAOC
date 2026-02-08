@@ -1,0 +1,38 @@
+# Déploiement de l'agent qui surveille les métriques
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      containers:
+      - name: node-exporter
+        image: prom/node-exporter:latest
+        ports:
+        - containerPort: 9100 # Port standard des métriques Prometheus
+---
+# Service pour que Prometheus puisse trouver Node Exporter
+apiVersion: v1
+kind: Service
+metadata:
+  # Ce nom "node-exporter" est CRUCIAL.
+  # C'est ce nom de domaine (DNS) qu'on a utilisé dans la config de Prometheus.
+  name: node-exporter
+  namespace: monitoring
+spec:
+  # ClusterIP car personne d'autre que Prometheus n'a besoin d'accéder à ces données.
+  type: ClusterIP
+  selector:
+    app: node-exporter
+  ports:
+    - port: 9100
+      targetPort: 9100
