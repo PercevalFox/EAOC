@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Site Docker</title>
+
+    <style>
+        body {
+            /* Police moderne sans serif */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Couleur de fond "Bleu Docker" */
+            background-color: #0db7ed;
+            /* Centrage vertical et horizontal */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .card {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        h1 {
+            color: #2496ed;
+            margin-bottom: 10px;
+        }
+        p {
+            line-height: 1.6;
+            color: #555;
+        }
+        .tag {
+            background-color: #eee;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+            display: inline-block;
+            margin: 5px;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Félicitations ! 🐳</h1>
+        <p>Si vous voyez cette page, c'est que le conteneur fonctionne parfaitement.</p>
+
+        <div style="margin-top: 20px;">
+            <span class="tag">Apache httpd 2.4</span>
+            <span class="tag">Alpine Linux</span>
+        </div>
+
+        <div class="footer">
+            <strong>By Steven for EAOC =)</strong>
+        </div>
+    </div>
+
+</body>
+</html>
