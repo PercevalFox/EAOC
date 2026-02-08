@@ -1,0 +1,67 @@
+# --- Objet 1 : La configuration (remplace le fichier local prometheus.yml) ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  # Ici on copie-colle le contenu de notre fichier prometheus.yml
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'kubernetes-node'
+        static_configs:
+          - targets: ['node-exporter:9100']
+
+---
+# --- Objet 2 : Le Déploiement (Gère les Pods) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deploy
+  namespace: monitoring
+spec:
+  # replicas : On veut 1 seul serveur Prometheus.
+  replicas: 1
+  selector:
+    # Ce déploiement gère les pods qui ont l'étiquette "app: prometheus".
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      # On colle l'étiquette sur les Pods créés.
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        # volumeMounts : On dit où mettre le fichier de config dans le conteneur.
+        volumeMounts:
+          - name: config-volume
+            mountPath: /etc/prometheus/prometheus.yml
+            subPath: prometheus.yml
+      # volumes : On crée le volume à partir de la ConfigMap définie plus haut.
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+
+---
+# --- Objet 3 : Le Service (Réseau interne) ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-service
+  namespace: monitoring
+spec:
+  # ClusterIP : Accessible uniquement à l'intérieur du cluster (par Grafana).
+  type: ClusterIP
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
