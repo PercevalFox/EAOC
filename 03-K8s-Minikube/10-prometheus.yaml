@@ -1,67 +1,76 @@
-# --- Objet 1 : La configuration (remplace le fichier local prometheus.yml) ---
+# --- PARTIE 1 : La ConfigMap (Stockage de configuration) ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
   namespace: monitoring
 data:
-  # Ici on copie-colle le contenu de notre fichier prometheus.yml
+  # prometheus.yml : C'est la clé (le nom du fichier virtuel).
+  # Le symbole "|" permet d'écrire un bloc de texte sur plusieurs lignes.
   prometheus.yml: |
     global:
-      scrape_interval: 15s
+      scrape_interval: 15s # Fréquence de collecte (pull)
     scrape_configs:
-      - job_name: 'kubernetes-node'
+      - job_name: 'node-exporter-job'
         static_configs:
+          # Ici, on cible le SERVICE Kubernetes de Node Exporter, pas le Pod direct.
+          # Le DNS interne de K8s résout "node-exporter" vers l'IP du service.
           - targets: ['node-exporter:9100']
 
 ---
-# --- Objet 2 : Le Déploiement (Gère les Pods) ---
+# --- PARTIE 2 : Le Déploiement (Gère le cycle de vie du Pod) ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prometheus-deploy
+  name: prometheus-deploy # Nom du déploiement dans K8s
   namespace: monitoring
 spec:
-  # replicas : On veut 1 seul serveur Prometheus.
+  # replicas : On demande à K8s de maintenir 1 seul Pod actif.
+  # Si le Pod crash, K8s en recrée un immédiatement.
   replicas: 1
   selector:
-    # Ce déploiement gère les pods qui ont l'étiquette "app: prometheus".
+    # Ce sélecteur permet au Déploiement de savoir quels Pods il doit surveiller.
+    # Il cherche tous les Pods qui ont l'étiquette "app: prometheus".
     matchLabels:
       app: prometheus
-  template:
+  template: # --- Début du modèle de Pod ---
     metadata:
-      # On colle l'étiquette sur les Pods créés.
+      # labels : On colle l'étiquette sur le Pod pour qu'il soit reconnu par le Service.
       labels:
         app: prometheus
     spec:
       containers:
       - name: prometheus
-        image: prom/prometheus:latest
+        image: prom/prometheus:latest # Image Docker officielle
         ports:
-        - containerPort: 9090
-        # volumeMounts : On dit où mettre le fichier de config dans le conteneur.
+        - containerPort: 9090 # Port ouvert DANS le conteneur
+        
+        # volumeMounts : On "monte" le volume dans le système de fichiers du conteneur.
         volumeMounts:
-          - name: config-volume
-            mountPath: /etc/prometheus/prometheus.yml
-            subPath: prometheus.yml
-      # volumes : On crée le volume à partir de la ConfigMap définie plus haut.
+          - name: config-volume # Doit correspondre au nom défini dans "volumes" plus bas
+            mountPath: /etc/prometheus/prometheus.yml # Chemin destination dans le conteneur
+            subPath: prometheus.yml # On prend juste ce fichier spécifique de la ConfigMap
+            
+      # volumes : Définition de la source des données (ici, notre ConfigMap).
       volumes:
         - name: config-volume
           configMap:
-            name: prometheus-config
+            name: prometheus-config # Nom de l'objet ConfigMap créé en Partie 1
 
 ---
-# --- Objet 3 : Le Service (Réseau interne) ---
+# --- PARTIE 3 : Le Service (Réseau interne) ---
 apiVersion: v1
 kind: Service
 metadata:
   name: prometheus-service
   namespace: monitoring
 spec:
-  # ClusterIP : Accessible uniquement à l'intérieur du cluster (par Grafana).
+  # type: ClusterIP > Le service n'est accessible QUE depuis l'intérieur du cluster.
+  # C'est sécurisé : Grafana pourra lui parler, mais pas quelqu'un d'extérieur.
   type: ClusterIP
   selector:
+    # Ce service redirige le trafic vers les Pods ayant ce label.
     app: prometheus
   ports:
-    - port: 9090
-      targetPort: 9090
+    - port: 9090       # Port d'écoute du Service (virtuel)
+      targetPort: 9090 # Port réel sur le Pod cible
