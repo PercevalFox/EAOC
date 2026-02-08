@@ -1,0 +1,59 @@
+# version : Définit la syntaxe du fichier Compose. La 3.8 est standard et récente. (plus obligatoire depuis peu de temps)
+version: '3.8'
+
+# services : Ici commence la liste des conteneurs à lancer.
+services:
+
+  # --- Service 1 : Prometheus ---
+  prometheus:
+    # image : On utilise l'image officielle.
+    image: prom/prometheus:latest
+    # container_name : Force un nom fixe.
+    container_name: prometheus
+    # volumes : Le point critique. On injecte notre fichier de config local
+    # vers l'emplacement standard de Prometheus dans le conteneur.
+    # Syntaxe : "chemin_hote:chemin_conteneur"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    # ports : Exposition des ports.
+    # 9090 (Gauche) : Port accessible sur votre machine (localhost:9090).
+    # 9090 (Droite) : Port interne du conteneur.
+    ports:
+      - "9090:9090"
+    # networks : On attache ce service au réseau privé créé plus bas.
+    networks:
+      - monitoring-net
+
+  # --- Service 2 : Grafana ---
+  grafana:
+    # image : On utilise l'image officielle.
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      # 3000 est le port standard de Grafana.
+      - "3000:3000"
+    networks:
+      - monitoring-net
+    # environment : On passe des variables d'environnement au conteneur.
+    # Cela permet de configurer Grafana sans toucher à ses fichiers internes.
+    environment:
+      # Définit le mot de passe admin par défaut (évite "admin/admin"). (BONNE PRATIQUE, mettez un .env avec une variable d'env)
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  # --- Service 3 : Node Exporter ---
+  node-exporter:
+    # image : L'outil qui récupère les métriques (CPU, RAM) de la machine.
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    # ports : 9100 est le port standard d'exposition des métriques.
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring-net
+
+# networks : Création explicite du réseau.
+networks:
+  monitoring-net:
+    # driver: bridge signifie que les conteneurs sont sur un réseau privé isolé
+    # mais peuvent sortir vers internet via votre machine (NAT).
+    driver: bridge
