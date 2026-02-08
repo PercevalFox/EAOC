@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-deploy
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        
+        # env : Injection de variables d'environnement dans le conteneur.
+        # Cela permet de configurer Grafana au démarrage sans toucher à ses fichiers.
+        env:
+        - name: GF_SECURITY_ADMIN_USER # Variable attendue par Grafana
+          valueFrom:
+            secretKeyRef: # On va chercher la valeur dans un Secret K8s
+              name: grafana-creds # Nom du fichier Secret (31-...)
+              key: user           # La clé spécifique à lires
+        
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-creds
+              key: password
+
+---
+# Service pour exposer Grafana à l'extérieur (pour que vous puissiez voir le dashboard)
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+  namespace: monitoring
+spec:
+  # type: NodePort > Ouvre un port sur l'IP de la machine (Minikube).
+  # C'est ce qui permet d'accéder au service depuis votre navigateur web.
+  type: NodePort
+  selector:
+    app: grafana
+  ports:
+    - port: 3000       # Port interne du cluster (Service)
+      targetPort: 3000 # Port du conteneur (Pod)
+      # nodePort : Port externe accessible (Plage 30000-32767).
+      # URL d'accès : http://IP_MINIKUBE:30000
+      nodePort: 30000
