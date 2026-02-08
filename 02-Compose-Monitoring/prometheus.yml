@@ -1,0 +1,16 @@
+# global : Paramètres qui s'appliquent partout.
+global:
+  # scrape_interval : À quelle fréquence Prometheus va "chercher" les données.
+  # 15s est un bon compromis entre précision et charge disque.
+  scrape_interval: 15s
+
+# scrape_configs : La liste des cibles à surveiller.
+scrape_configs:
+  # job_name : Le nom qui apparaîtra dans les logs et l'interface.
+  - job_name: 'node-exporter'
+    # static_configs : On définit les cibles manuellement (pas d'auto-découverte ici).
+    static_configs:
+      # targets : L'adresse de la cible.
+      # SUPER IMPORTANT : On utilise le nom du service Docker "node-exporter"
+      # Docker Compose possède un DNS interne qui transforme ce nom en IP.
+      - targets: ['node-exporter:9100']
