@@ -1,0 +1,9 @@
+# apiVersion : Version de base de l'API Kubernetes.
+apiVersion: v1
+# kind : Le type d'objet est un Namespace.
+kind: Namespace
+# metadata : Informations sur l'objet.
+metadata:
+  # name : Le nom de notre espace isolé.
+  # Toutes les commandes devront utiliser "-n monitoring".
+  name: monitoring
