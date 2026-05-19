@@ -1,0 +1,9 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader-role
+  namespace: monitoring
+rules:
+- apiGroups: [""] # "" indique l'API de base de K8s (où se trouvent les Pods)
+  resources: ["pods"] # Civble uniquement les Pods
+  verbs: ["get", "list", "watch"] # Droits de lecture seule. Pas de delete ni de create !
